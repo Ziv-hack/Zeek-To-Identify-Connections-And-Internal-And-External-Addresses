@@ -54,7 +54,8 @@ type PacketHeader : record {
     dst_ip : addr;
     dst_port : port;
     transport_protocol : count;
-    application_protocol : string;
+    curr_time : time;
+    id : string;
 };
 
 # This is the set of subnets that define whether the address is local or not
@@ -88,7 +89,18 @@ function ip_in_subnet(ip : addr, subnets : set[subnet] &default = ListingConnect
     return F;
 }
 
+#This will be the main event - function actually running
+# It will be triggered every time a tcp handshake is established / upon the first communication of udp connection
+event connection_established(c:connection)
+{
+    
+    local header : PacketHeader = PacketHeader($src_ip = c$id$orig_h, $src_port = c$id$orig_p,
+    $dst_ip = c$id$resp_h, $dst_port = c$id$resp_p, $transport_protocol = c$id$proto, 
+    $curr_time = c$start_time, $id = c$uid);
+    
+    
 
+}
 event zeek_init()
 {
     print fmt("Starting to monitor connections");
