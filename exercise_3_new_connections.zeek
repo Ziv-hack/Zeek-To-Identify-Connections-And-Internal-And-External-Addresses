@@ -75,7 +75,8 @@ global addresses: set[addr] = {
 
 global num_of_connections : count = 0;
 
-
+# This function is because zeek saves the transport layer protocol us count numbers that we can translate to protocol easily
+# This way we can get the actual name of the protocol and print and use it, not the number identifying it
 function proto_to_string(p: count): string
     {
     if ( p == 6 )  return "tcp";
@@ -84,7 +85,7 @@ function proto_to_string(p: count): string
     return fmt("unknown(%d)", p);
     }
 # This will be the helper function that receives an ip addr and vector of subnets and return true whether that ip 
-# addr is in one of the subnets
+# addr is in one of the subnets 
 function ip_in_subnet(ip : addr, subnets : set[subnet] &default = ListingConnections::local_subnets) : bool
 {
     for (s in subnets)
@@ -98,7 +99,7 @@ function ip_in_subnet(ip : addr, subnets : set[subnet] &default = ListingConnect
 }
 
 #This will be the main event - function actually running
-# It will be triggered every time a tcp handshake is established / upon the first communication of udp connection
+# It will be triggered every time a tcp handshake is established / upon the first communication of udp connection 
 event connection_established(c:connection)
 {
     
@@ -113,10 +114,41 @@ event connection_established(c:connection)
         print header;
     }
     num_of_connections += 1;
-    
+
+    # Now I need to print for each unique ip address whther it is local (in my local subnets or not)
+    if(header$src_ip !in addresses)
+    {
+        add addresses[header$src_ip];
+        if(ip_in_subnet(header$src_ip))
+        {
+            print fmt("The address %s is: local",header$src_ip);
+        }
+        else
+        {
+            print fmt("The address %s is: external",header$src_ip);
+        }
+       
+    }
+
+    if(header$dst_ip !in addresses)
+    {
+        add addresses[header$dst_ip];
+        if(ip_in_subnet(header$dst_ip))
+        {
+            print fmt("The address %s is: local",header$dst_ip);
+        }
+        else
+        {
+            print fmt("The address %s is: external",header$dst_ip);
+        }
+       
+    }
+
     
 
 }
+
+
 event zeek_init()
 {
     print fmt("Starting to monitor connections");
@@ -125,5 +157,6 @@ event zeek_init()
 
 event zeek_done()
 {
+    print fmt("The number of connections total in this .pcap file: %s", ListingConnections::num_of_connections);
     print "Done Processing";
 }
