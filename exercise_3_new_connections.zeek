@@ -70,7 +70,7 @@ const local_subnets: set[subnet] = {
 }
 
 
-global addresses: set[addr] = {
+global addresses: table[addr] of string = {
 };
 
 global num_of_connections : count = 0;
@@ -118,28 +118,27 @@ event connection_established(c:connection)
     # Now I need to print for each unique ip address whther it is local (in my local subnets or not)
     if(header$src_ip !in addresses)
     {
-        add addresses[header$src_ip];
         if(ip_in_subnet(header$src_ip))
         {
-            print fmt("The address %s is: local",header$src_ip);
+            addresses[header$src_ip] = "local";
         }
         else
         {
-            print fmt("The address %s is: external",header$src_ip);
+            addresses[header$src_ip] = "external";
         }
        
     }
 
     if(header$dst_ip !in addresses)
     {
-        add addresses[header$dst_ip];
+        
         if(ip_in_subnet(header$dst_ip))
         {
-            print fmt("The address %s is: local",header$dst_ip);
+            addresses[header$dst_ip] = "local";
         }
         else
         {
-            print fmt("The address %s is: external",header$dst_ip);
+            addresses[header$dst_ip] = "external";
         }
        
     }
