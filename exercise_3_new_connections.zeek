@@ -53,7 +53,7 @@ type PacketHeader : record {
     src_port : port;
     dst_ip : addr;
     dst_port : port;
-    transport_protocol : count;
+    transport_protocol : string;
     curr_time : time;
     id : string;
 };
@@ -75,6 +75,14 @@ global addresses: set[addr] = {
 
 global num_of_connections : count = 0;
 
+
+function proto_to_string(p: count): string
+    {
+    if ( p == 6 )  return "tcp";
+    if ( p == 17 ) return "udp";
+    if ( p == 1 )  return "icmp";
+    return fmt("unknown(%d)", p);
+    }
 # This will be the helper function that receives an ip addr and vector of subnets and return true whether that ip 
 # addr is in one of the subnets
 function ip_in_subnet(ip : addr, subnets : set[subnet] &default = ListingConnections::local_subnets) : bool
@@ -95,8 +103,16 @@ event connection_established(c:connection)
 {
     
     local header : PacketHeader = PacketHeader($src_ip = c$id$orig_h, $src_port = c$id$orig_p,
-    $dst_ip = c$id$resp_h, $dst_port = c$id$resp_p, $transport_protocol = c$id$proto, 
+    $dst_ip = c$id$resp_h, $dst_port = c$id$resp_p, $transport_protocol = proto_to_string(c$id$proto), 
     $curr_time = c$start_time, $id = c$uid);
+
+    if(num_of_connections < 10)
+    {
+        # This is a great use of records - this way i can just print the entire object in a human readable form like
+        # data class in kotlin
+        print header;
+    }
+    num_of_connections += 1;
     
     
 
